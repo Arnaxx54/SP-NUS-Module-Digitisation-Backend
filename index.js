@@ -8,7 +8,10 @@ require("dotenv").config();
 //   /\.netlify\.app$/ // Allow any subdomain of netlify.app
 // ];
 
-const allowedOrigins = [/^https:\/\/.*\.netlify\.app$/];
+const allowedOrigins = [
+  'https://stupendous-naiad-9b0879.netlify.app',
+  /^https:\/\/.*\.netlify\.app$/
+];
 
 
 const corsOptions = {
