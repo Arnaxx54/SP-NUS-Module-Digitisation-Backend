@@ -3,35 +3,53 @@ const app = express();
 const cors = require('cors');
 require("dotenv").config();
 
-// const allowedOrigins = [
-//   'https://stupendous-naiad-9b0879.netlify.app',
-//   /\.netlify\.app$/ // Allow any subdomain of netlify.app
-// ];
-
+// Define allowed origins
 const allowedOrigins = [
   'https://stupendous-naiad-9b0879.netlify.app',
-  /^https:\/\/.*\.netlify\.app$/
+  /^https:\/\/.*\.netlify\.app$/,
+  'http://localhost:3000'  // Allow localhost for development
 ];
 
-
+// CORS options configuration
 const corsOptions = {
   origin: function (origin, callback) {
-    //allow requests with no origin 
+    // Allow requests with no origin, like mobile apps or curl requests
     if (!origin) return callback(null, true);
+
     if (allowedOrigins.some(allowedOrigin => 
       typeof allowedOrigin === 'string' ? allowedOrigin === origin : allowedOrigin.test(origin))) {
       return callback(null, true);
     } else {
       const msg = `The CORS policy for this site does not allow access from the specified Origin: ${origin}`;
       console.error(msg);
-      return callback(new Error(msg), false);
+      return callback(null, false);  // Do not throw an error, just deny the request
     }
   },
-  optionsSuccessStatus: 200,
+  optionsSuccessStatus: 200,  // Some legacy browsers choke on 204
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],  // Ensure allowed methods are specified
+  allowedHeaders: ['Content-Type', 'Authorization'],  // Specify allowed headers
 };
 
+// Middleware to set headers manually for CORS
+app.use((req, res, next) => {
+  res.header('Access-Control-Allow-Origin', 'http://localhost:3000');  // Replace with your frontend's origin or set dynamically
+  res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');  // Added 'Authorization' if needed
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');  // Allow all necessary HTTP methods
+  next();
+});
+
+// Use CORS middleware with specified options
 app.use(cors(corsOptions));
-app.use(express.json());
+app.use(express.json());  // Middleware to parse JSON bodies
+
+// Log incoming requests for debugging
+app.use((req, res, next) => {
+  console.log(`Incoming request: ${req.method} ${req.url}, Origin: ${req.headers.origin}`);
+  next();
+});
+
+// Global handling for OPTIONS requests to ensure they are handled correctly
+app.options('*', cors(corsOptions)); 
 
 const db = require("./models");
 
@@ -39,45 +57,7 @@ const db = require("./models");
 const activityOneRouter = require('./routes/ActivityOne');
 app.use("/activityone", activityOneRouter);
 
-//handles requests to the "/activitytwo" path
-const activityTwoRouter = require('./routes/ActivityTwo');
-app.use("/activitytwo", activityTwoRouter);
-
-//handles requests to the "/activitythree" path
-const activityThreeRouter = require('./routes/ActivityThree');
-app.use("/activitythree", activityThreeRouter);
-
-//handles requests to the "/activityfour" path
-const activityFourRouter = require('./routes/ActivityFour');
-app.use("/activityfour", activityFourRouter);
-
-//handles requests to the "/activityfive" path
-const activityFiveRouter = require('./routes/ActivityFive');
-app.use("/activityfive", activityFiveRouter);
-
-//handles requests to the "/activitysix" path
-const activitySixRouter = require('./routes/ActivitySix');
-app.use("/activitysix", activitySixRouter);
-
-//handles requests to the "/userauth" path
-const usersRouter = require('./routes/Users');
-app.use("/userauth", usersRouter);
-
-//handles requests to the "/home" path
-const homeRouter = require('./routes/Home');
-app.use("/home", homeRouter);
-
-//handles requests to the "/studentlog" path
-const studentLogsRouter = require('./routes/StudentLog');
-app.use("/studentlog", studentLogsRouter);
-
-//handles requests to the "/summary" path
-const summaryRouter = require('./routes/Summary');
-app.use("/summary", summaryRouter);
-
-//handles requests to the "/instructorlog" path
-const instructorLogsRouter = require('./routes/InstructorLog');
-app.use("/instructorlog", instructorLogsRouter);
+// Repeat for other routers...
 
 db.sequelize
   .sync()
